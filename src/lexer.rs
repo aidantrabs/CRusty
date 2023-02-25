@@ -45,14 +45,17 @@ pub enum Token {
 /*
      @Description: Lexical analyzer
      @Params: input - String to be tokenized
-     @Returns: Vec<Token> - Vector of tokens
+     @Returns: Result<Vec<Token>, String> - Vector of tokens or error message
 */
-pub fn lex(input: &str) -> Vec<Token> {
+pub fn lex(input: &str) -> Result<Vec<Token>, String> {
      let mut tokens = Vec::new();
      let mut chars = input.chars().peekable();
+     let mut line_number = 1;
 
      while let Some(c) = chars.next() {
           match c {
+               '\n' => line_number += 1,
+               ' ' | '\t' | '\r' => continue,
                'a'..='z' | 'A'..='Z' => {
                     let mut ident = c.to_string();
                     while let Some(&next_char) = chars.peek() {
@@ -96,6 +99,11 @@ pub fn lex(input: &str) -> Vec<Token> {
                                    chars.next();
                                    is_float = true;
                               }
+
+                              'a'..='z' | 'A'..='Z' => {
+                                   return Err(format!("Invalid token: '{}' at line {}", next_char, line_number));
+                              }
+                         
                               _ => break,
                          }
                     }
@@ -151,22 +159,19 @@ pub fn lex(input: &str) -> Vec<Token> {
                          chars.next();
                          tokens.push(Token::Or);
                     }
-                    _ => {}
+                    _ => return Err(format!("Invalid character: '{}'", c)),
                },
                '&' => match chars.peek() {
                     Some(&'&') => {
                          chars.next();
                          tokens.push(Token::And);
                     }
-                    _ => {}
+                    _ => return Err(format!("Invalid token: '{}' at line {}", c, line_number)),
                },
                '[' => tokens.push(Token::LBracket),
                ']' => tokens.push(Token::RBracket),
-               _ => {}
+               _ => return Err(format!("Invalid token: '{}' at line {}", c, line_number)),
           }
      }
-
-     tokens
-
+     Ok(tokens)
 }
-               
