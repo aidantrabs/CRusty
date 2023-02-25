@@ -159,7 +159,7 @@ pub fn lex(input: &str) -> Result<Vec<Token>, String> {
                          chars.next();
                          tokens.push(Token::Or);
                     }
-                    _ => return Err(format!("Invalid character: '{}'", c)),
+                    _ => return Err(format!("Invalid token: '{}' at line {}", c, line_number)),
                },
                '&' => match chars.peek() {
                     Some(&'&') => {
