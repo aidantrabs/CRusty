@@ -1,1 +1,2 @@
-int num = 1r9;
+int num = 129;
+num += 71b;
