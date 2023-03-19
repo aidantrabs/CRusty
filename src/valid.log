@@ -1,0 +1,9 @@
+Type("int")
+Ident("num")
+Assign
+IntegerLiteral(129)
+Semicolon
+Ident("num")
+PlusAssign
+IntegerLiteral(71)
+Semicolon
