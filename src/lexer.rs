@@ -14,10 +14,15 @@ pub enum Token {
      Semicolon,
      Assign,
      Plus,
+     PlusAssign,
      Minus,
+     MinusAssign,
      Asterisk,
+     AsteriskAssign,
      Slash,
+     SlashAssign,
      Percent,
+     PercentAssign,
      If,
      Then,
      Else,
@@ -128,11 +133,41 @@ pub fn lex(input: &str) -> Result<Vec<Token>, String> {
                     }
                     _ => tokens.push(Token::Assign),
                },
-               '+' => tokens.push(Token::Plus),
-               '-' => tokens.push(Token::Minus),
-               '*' => tokens.push(Token::Asterisk),
-               '/' => tokens.push(Token::Slash),
-               '%' => tokens.push(Token::Percent),
+               '+' => match chars.peek() {
+                    Some(&'=') => {
+                         chars.next();
+                         tokens.push(Token::PlusAssign);
+                    }
+                    _ => tokens.push(Token::Plus),
+               },
+               '-' => match chars.peek() {
+                    Some(&'=') => {
+                         chars.next();
+                         tokens.push(Token::MinusAssign);
+                    }
+                    _ => tokens.push(Token::Minus),
+               },
+               '*' => match chars.peek() {
+                    Some(&'=') => {
+                         chars.next();
+                         tokens.push(Token::AsteriskAssign);
+                    }
+                    _ => tokens.push(Token::Asterisk),
+               },
+               '/' => match chars.peek() {
+                    Some(&'=') => {
+                         chars.next();
+                         tokens.push(Token::SlashAssign);
+                    }
+                    _ => tokens.push(Token::Slash),
+               },
+               '%' => match chars.peek() {
+                    Some(&'=') => {
+                         chars.next();
+                         tokens.push(Token::PercentAssign);
+                    }
+                    _ => tokens.push(Token::Percent),
+               },
                '!' => match chars.peek() {
                     Some(&'=') => {
                          chars.next();
