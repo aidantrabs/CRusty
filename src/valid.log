@@ -1,9 +1,10 @@
-Type("int")
-Ident("num")
-Assign
-IntegerLiteral(129)
-Semicolon
-Ident("num")
-PlusAssign
-IntegerLiteral(71)
-Semicolon
+Token { token_type: Type("int"), line_number: 1, column_number: 1, value: "" }
+Token { token_type: Ident("num"), line_number: 1, column_number: 2, value: "" }
+Token { token_type: Assign, line_number: 1, column_number: 3, value: "" }
+Token { token_type: IntegerLiteral(129), line_number: 1, column_number: 4, value: "" }
+Token { token_type: Semicolon, line_number: 1, column_number: 5, value: "" }
+Token { token_type: Ident("num"), line_number: 2, column_number: 1, value: "" }
+Token { token_type: PlusAssign, line_number: 2, column_number: 2, value: "" }
+Token { token_type: IntegerLiteral(71), line_number: 2, column_number: 3, value: "" }
+Token { token_type: Ident("b"), line_number: 2, column_number: 4, value: "" }
+Token { token_type: Semicolon, line_number: 2, column_number: 5, value: "" }
