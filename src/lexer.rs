@@ -96,6 +96,7 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                               _ => break,
                          }
                     }
+                    
                     let token_type = match ident.as_str() {
                          "def" => TokenTypes::Def,
                          "type" => TokenTypes::Type(ident),
