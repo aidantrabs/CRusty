@@ -96,10 +96,10 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                               _ => break,
                          }
                     }
-                    
+
                     let token_type = match ident.as_str() {
                          "def" => TokenTypes::Def,
-                         "type" => TokenTypes::Type(ident),
+                         "type" => TokenTypes::Type(ident.clone()),
                          "if" => TokenTypes::If,
                          "then" => TokenTypes::Then,
                          "else" => TokenTypes::Else,
@@ -112,18 +112,18 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                          "or" => TokenTypes::Or,
                          "and" => TokenTypes::And,
                          "not" => TokenTypes::Not,
-                         "int" => TokenTypes::Type(ident),
-                         "double" => TokenTypes::Type(ident),
-                         "bool" => TokenTypes::Type(ident),
-                         "string" => TokenTypes::Type(ident),
-                         "void" => TokenTypes::Type(ident),
-                         _ => TokenTypes::Ident(ident),
+                         "int" => TokenTypes::Type(ident.clone()),
+                         "double" => TokenTypes::Type(ident.clone()),
+                         "bool" => TokenTypes::Type(ident.clone()),
+                         "string" => TokenTypes::Type(ident.clone()),
+                         "void" => TokenTypes::Type(ident.clone()),
+                         _ => TokenTypes::Ident(ident.clone()),
                     };
                     tokens.push(Token {
                          token_type,
                          line_number,
                          column_number,
-                         value: String::new().to_owned(),
+                         value: ident.as_str().to_string(),
                     });
                }
 
@@ -158,7 +158,7 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                               ),
                               line_number,
                               column_number,
-                              value: String::new(),
+                              value: number.clone(),
                          });
                     } else {
                          tokens.push(Token {
@@ -167,7 +167,7 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                               ),
                               line_number,
                               column_number,
-                              value: String::new(),
+                              value: number.clone(),
                          });
                     }
                }
@@ -176,35 +176,35 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                     token_type: TokenTypes::LParen,
                     line_number,
                     column_number,
-                    value: String::new(),
+                    value: String::from("("),
                }),
 
                ')' => tokens.push(Token {
                     token_type: TokenTypes::RParen,
                     line_number,
                     column_number,
-                    value: String::new(),
+                    value: String::from(")"),
                }),
 
                ',' => tokens.push(Token {
                     token_type: TokenTypes::Comma,
                     line_number,
                     column_number,
-                    value: String::new(),
+                    value: String::from(","),
                }),
 
                ';' => tokens.push(Token {
                     token_type: TokenTypes::Semicolon,
                     line_number,
                     column_number,
-                    value: String::new(),
+                    value: String::from(";"),
                }),
 
                '=' => tokens.push(Token {
                     token_type: TokenTypes::Assign,
                     line_number,
                     column_number,
-                    value: String::new(),
+                    value: String::from("="),
                }),
 
                '+' => {
@@ -214,14 +214,14 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                               token_type: TokenTypes::PlusAssign,
                               line_number,
                               column_number,
-                              value: String::new(),
+                              value: String::from("+="),
                          });
                     } else {
                          tokens.push(Token {
                               token_type: TokenTypes::Plus,
                               line_number,
                               column_number,
-                              value: String::new(),
+                              value: String::from("+"),
                          });
                     }
                }
@@ -233,14 +233,14 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                               token_type: TokenTypes::MinusEqual,
                               line_number,
                               column_number,
-                              value: String::new(),
+                              value: String::from("-="),
                          });
                     } else {
                          tokens.push(Token {
                               token_type: TokenTypes::Minus,
                               line_number,
                               column_number,
-                              value: String::new(),
+                              value: String::from("-"),
                          });
                     }
                }
@@ -252,14 +252,14 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                               token_type: TokenTypes::AsteriskEqual,
                               line_number,
                               column_number,
-                              value: String::new(),
+                              value: String::from("*="),
                          });
                     } else {
                          tokens.push(Token {
                               token_type: TokenTypes::Asterisk,
                               line_number,
                               column_number,
-                              value: String::new(),
+                              value: String::from("*"),
                          });
                     }
                }
@@ -271,14 +271,14 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                               token_type: TokenTypes::DivideEqual,
                               line_number,
                               column_number,
-                              value: String::new(),
+                              value: String::from("/="),
                          });
                     } else {
                          tokens.push(Token {
                               token_type: TokenTypes::Divide,
                               line_number,
                               column_number,
-                              value: String::new(),
+                              value: String::from("/"),
                          });
                     }
                }
@@ -290,14 +290,14 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                               token_type: TokenTypes::ModuloEqual,
                               line_number,
                               column_number,
-                              value: String::new(),
+                              value: String::from("%="),
                          });
                     } else {
                          tokens.push(Token {
                               token_type: TokenTypes::Modulo,
                               line_number,
                               column_number,
-                              value: String::new(),
+                              value: String::from("%"),
                          });
                     }
                }
@@ -309,14 +309,24 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                               token_type: TokenTypes::LessEqual,
                               line_number,
                               column_number,
-                              value: String::new(),
+                              value: String::from("<="),
+                         });
+                    } 
+
+                    if let Some(&'>') = chars.peek() {
+                         chars.next();
+                         tokens.push(Token {
+                              token_type: TokenTypes::NotEqual,
+                              line_number,
+                              column_number,
+                              value: String::from("<>"),
                          });
                     } else {
                          tokens.push(Token {
                               token_type: TokenTypes::Less,
                               line_number,
                               column_number,
-                              value: String::new(),
+                              value: String::from("<"),
                          });
                     }
                }
@@ -328,14 +338,14 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                               token_type: TokenTypes::GreaterEqual,
                               line_number,
                               column_number,
-                              value: String::new(),
+                              value: String::from(">="),
                          });
                     } else {
                          tokens.push(Token {
                               token_type: TokenTypes::Greater,
                               line_number,
                               column_number,
-                              value: String::new(),
+                              value: String::from(">"),
                          });
                     }
                }
@@ -347,7 +357,7 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                               token_type: TokenTypes::NotEqual,
                               line_number,
                               column_number,
-                              value: String::new(),
+                              value: String::from("!="),
 
                          });
                     } else {
@@ -355,7 +365,7 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                               token_type: TokenTypes::Not,
                               line_number,
                               column_number,
-                              value: c.to_string(),
+                              value: String::from("!"),
                          });
                     }
                }
@@ -365,7 +375,7 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                         token_type: TokenTypes::Error,
                         line_number,
                         column_number,
-                        value: c.to_string(),
+                        value: String::from("Unknown token"),
                    });
               }
           }
