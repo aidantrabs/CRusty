@@ -4,7 +4,7 @@
      @Returns: None
 */
 #[derive(Debug)]
-pub enum Token {
+pub enum TokenTypes {
      Def,
      Type(String),
      Ident(String),
@@ -16,13 +16,13 @@ pub enum Token {
      Plus,
      PlusAssign,
      Minus,
-     MinusAssign,
+     MinusEqual,
      Asterisk,
-     AsteriskAssign,
-     Slash,
-     SlashAssign,
-     Percent,
-     PercentAssign,
+     AsteriskEqual,
+     Divide,
+     DivideEqual,
+     Modulo,
+     ModuloEqual,
      If,
      Then,
      Else,
@@ -45,167 +45,328 @@ pub enum Token {
      NotEqual,
      LBracket,
      RBracket,
+     Error,
 }
 
 /*
-     @Description: Lexical analyzer
-     @Params: input - String to be tokenized
-     @Returns: Result<Vec<Token>, String> - Vector of tokens or error message
+     @Description: Struct for tokens
+     @Params: None
+     @Returns: None
 */
-pub fn lex(input: &str) -> Result<Vec<Token>, String> {
+#[derive(Debug)]
+pub struct Token {
+     pub token_type: TokenTypes,
+     pub line_number: usize,
+     pub column_number: usize,
+     pub value: String,
+}
+
+/* 
+     @Description: Lexical Analyzer, converts input code into tokens, which are printed on different lines with line number, if an error is found, it is printed, but the program continues to run and tokenize the rest of the code
+     @Param: input - String
+     @Return: Token on different line with line number
+*/
+pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
      let mut tokens = Vec::new();
      let mut chars = input.chars().peekable();
      let mut line_number = 1;
+     let mut column_number = 0;
 
      while let Some(c) = chars.next() {
+          if !(c == ' ' || c == '\t' || c == '\r') {
+               column_number += 1;
+
+               if c == '\n' {
+                    column_number = 0;
+               }
+          }
+          
           match c {
                '\n' => line_number += 1,
                ' ' | '\t' | '\r' => continue,
                'a'..='z' | 'A'..='Z' => {
-                    let mut ident = c.to_string();
-                    while let Some(&next_char) = chars.peek() {
-                         match next_char {
+                    let mut ident = String::new();
+                    ident.push(c);
+                    while let Some(&c) = chars.peek() {
+                         match c {
                               'a'..='z' | 'A'..='Z' | '0'..='9' => {
-                                   ident.push(next_char);
+                                   ident.push(c);
                                    chars.next();
                               }
                               _ => break,
                          }
                     }
-
-                    match ident.as_str() {
-                         "def" => tokens.push(Token::Def),
-                         "int" => tokens.push(Token::Type("int".to_owned())),
-                         "double" => tokens.push(Token::Type("double".to_owned())),
-                         "if" => tokens.push(Token::If),
-                         "then" => tokens.push(Token::Then),
-                         "else" => tokens.push(Token::Else),
-                         "fi" => tokens.push(Token::Fi),
-                         "while" => tokens.push(Token::While),
-                         "do" => tokens.push(Token::Do),
-                         "od" => tokens.push(Token::Od),
-                         "print" => tokens.push(Token::Print),
-                         "return" => tokens.push(Token::Return),
-                         _ => tokens.push(Token::Ident(ident)),
-                    }
+                    let token_type = match ident.as_str() {
+                         "def" => TokenTypes::Def,
+                         "type" => TokenTypes::Type(ident),
+                         "if" => TokenTypes::If,
+                         "then" => TokenTypes::Then,
+                         "else" => TokenTypes::Else,
+                         "fi" => TokenTypes::Fi,
+                         "while" => TokenTypes::While,
+                         "do" => TokenTypes::Do,
+                         "od" => TokenTypes::Od,
+                         "print" => TokenTypes::Print,
+                         "return" => TokenTypes::Return,
+                         "or" => TokenTypes::Or,
+                         "and" => TokenTypes::And,
+                         "not" => TokenTypes::Not,
+                         "int" => TokenTypes::Type(ident),
+                         "double" => TokenTypes::Type(ident),
+                         "bool" => TokenTypes::Type(ident),
+                         "string" => TokenTypes::Type(ident),
+                         "void" => TokenTypes::Type(ident),
+                         _ => TokenTypes::Ident(ident),
+                    };
+                    tokens.push(Token {
+                         token_type,
+                         line_number,
+                         column_number,
+                         value: String::new().to_owned(),
+                    });
                }
 
                '0'..='9' => {
-                    let mut num_str = c.to_string();
-                    let mut is_float = false;
-                    while let Some(&next_char) = chars.peek() {
-                         match next_char {
+                    let mut number = String::new();
+                    number.push(c);
+                    while let Some(&c) = chars.peek() {
+                         match c {
                               '0'..='9' => {
-                                   num_str.push(next_char);
+                                   number.push(c);
                                    chars.next();
                               }
-                              '.' if !is_float => {
-                                   num_str.push(next_char);
-                                   chars.next();
-                                   is_float = true;
-                              }
-
-                              'a'..='z' | 'A'..='Z' => {
-                                   return Err(format!("Invalid token: '{}' at line {}", next_char, line_number));
-                              }
-                         
                               _ => break,
                          }
                     }
 
-                    if is_float {
-                         if let Ok(num) = num_str.parse() {
-                              tokens.push(Token::DoubleLiteral(num));
+                    if let Some(&'.') = chars.peek() {
+                         number.push('.');
+                         chars.next();
+                         while let Some(&c) = chars.peek() {
+                              match c {
+                                   '0'..='9' => {
+                                        number.push(c);
+                                        chars.next();
+                                   }
+                                   _ => break,
+                              }
                          }
-                    } else if let Ok(num) = num_str.parse() {
-                         tokens.push(Token::IntegerLiteral(num));
+                         tokens.push(Token {
+                              token_type: TokenTypes::DoubleLiteral(
+                                   number.parse().expect("Unable to parse double"),
+                              ),
+                              line_number,
+                              column_number,
+                              value: String::new(),
+                         });
+                    } else {
+                         tokens.push(Token {
+                              token_type: TokenTypes::IntegerLiteral(
+                                   number.parse().expect("Unable to parse integer"),
+                              ),
+                              line_number,
+                              column_number,
+                              value: String::new(),
+                         });
                     }
                }
 
-               '(' => tokens.push(Token::LParen),
-               ')' => tokens.push(Token::RParen),
-               ',' => tokens.push(Token::Comma),
-               ';' => tokens.push(Token::Semicolon),
-               '=' => match chars.peek() {
-                    Some(&'=') => {
+               '(' => tokens.push(Token {
+                    token_type: TokenTypes::LParen,
+                    line_number,
+                    column_number,
+                    value: String::new(),
+               }),
+
+               ')' => tokens.push(Token {
+                    token_type: TokenTypes::RParen,
+                    line_number,
+                    column_number,
+                    value: String::new(),
+               }),
+
+               ',' => tokens.push(Token {
+                    token_type: TokenTypes::Comma,
+                    line_number,
+                    column_number,
+                    value: String::new(),
+               }),
+
+               ';' => tokens.push(Token {
+                    token_type: TokenTypes::Semicolon,
+                    line_number,
+                    column_number,
+                    value: String::new(),
+               }),
+
+               '=' => tokens.push(Token {
+                    token_type: TokenTypes::Assign,
+                    line_number,
+                    column_number,
+                    value: String::new(),
+               }),
+
+               '+' => {
+                    if let Some(&'=') = chars.peek() {
                          chars.next();
-                         tokens.push(Token::Equal);
+                         tokens.push(Token {
+                              token_type: TokenTypes::PlusAssign,
+                              line_number,
+                              column_number,
+                              value: String::new(),
+                         });
+                    } else {
+                         tokens.push(Token {
+                              token_type: TokenTypes::Plus,
+                              line_number,
+                              column_number,
+                              value: String::new(),
+                         });
                     }
-                    _ => tokens.push(Token::Assign),
-               },
-               '+' => match chars.peek() {
-                    Some(&'=') => {
+               }
+
+               '-' => {
+                    if let Some(&'=') = chars.peek() {
                          chars.next();
-                         tokens.push(Token::PlusAssign);
+                         tokens.push(Token {
+                              token_type: TokenTypes::MinusEqual,
+                              line_number,
+                              column_number,
+                              value: String::new(),
+                         });
+                    } else {
+                         tokens.push(Token {
+                              token_type: TokenTypes::Minus,
+                              line_number,
+                              column_number,
+                              value: String::new(),
+                         });
                     }
-                    _ => tokens.push(Token::Plus),
-               },
-               '-' => match chars.peek() {
-                    Some(&'=') => {
+               }
+
+               '*' => {
+                    if let Some(&'=') = chars.peek() {
                          chars.next();
-                         tokens.push(Token::MinusAssign);
+                         tokens.push(Token {
+                              token_type: TokenTypes::AsteriskEqual,
+                              line_number,
+                              column_number,
+                              value: String::new(),
+                         });
+                    } else {
+                         tokens.push(Token {
+                              token_type: TokenTypes::Asterisk,
+                              line_number,
+                              column_number,
+                              value: String::new(),
+                         });
                     }
-                    _ => tokens.push(Token::Minus),
-               },
-               '*' => match chars.peek() {
-                    Some(&'=') => {
+               }
+
+               '/' => {
+                    if let Some(&'=') = chars.peek() {
                          chars.next();
-                         tokens.push(Token::AsteriskAssign);
+                         tokens.push(Token {
+                              token_type: TokenTypes::DivideEqual,
+                              line_number,
+                              column_number,
+                              value: String::new(),
+                         });
+                    } else {
+                         tokens.push(Token {
+                              token_type: TokenTypes::Divide,
+                              line_number,
+                              column_number,
+                              value: String::new(),
+                         });
                     }
-                    _ => tokens.push(Token::Asterisk),
-               },
-               '/' => match chars.peek() {
-                    Some(&'=') => {
+               }
+
+               '%' => {
+                    if let Some(&'=') = chars.peek() {
                          chars.next();
-                         tokens.push(Token::SlashAssign);
+                         tokens.push(Token {
+                              token_type: TokenTypes::ModuloEqual,
+                              line_number,
+                              column_number,
+                              value: String::new(),
+                         });
+                    } else {
+                         tokens.push(Token {
+                              token_type: TokenTypes::Modulo,
+                              line_number,
+                              column_number,
+                              value: String::new(),
+                         });
                     }
-                    _ => tokens.push(Token::Slash),
-               },
-               '%' => match chars.peek() {
-                    Some(&'=') => {
+               }
+
+               '<' => {
+                    if let Some(&'=') = chars.peek() {
                          chars.next();
-                         tokens.push(Token::PercentAssign);
+                         tokens.push(Token {
+                              token_type: TokenTypes::LessEqual,
+                              line_number,
+                              column_number,
+                              value: String::new(),
+                         });
+                    } else {
+                         tokens.push(Token {
+                              token_type: TokenTypes::Less,
+                              line_number,
+                              column_number,
+                              value: String::new(),
+                         });
                     }
-                    _ => tokens.push(Token::Percent),
-               },
-               '!' => match chars.peek() {
-                    Some(&'=') => {
+               }
+
+               '>' => {
+                    if let Some(&'=') = chars.peek() {
                          chars.next();
-                         tokens.push(Token::NotEqual);
+                         tokens.push(Token {
+                              token_type: TokenTypes::GreaterEqual,
+                              line_number,
+                              column_number,
+                              value: String::new(),
+                         });
+                    } else {
+                         tokens.push(Token {
+                              token_type: TokenTypes::Greater,
+                              line_number,
+                              column_number,
+                              value: String::new(),
+                         });
                     }
-                    _ => tokens.push(Token::Not),
-               },
-               '<' => match chars.peek() {
-                    Some(&'=') => {
+               }
+
+               '!' => {
+                    if let Some(&'=') = chars.peek() {
                          chars.next();
-                         tokens.push(Token::LessEqual);
+                         tokens.push(Token {
+                              token_type: TokenTypes::NotEqual,
+                              line_number,
+                              column_number,
+                              value: String::new(),
+
+                         });
+                    } else {
+                         tokens.push(Token {
+                              token_type: TokenTypes::Not,
+                              line_number,
+                              column_number,
+                              value: c.to_string(),
+                         });
                     }
-                    _ => tokens.push(Token::Less),
-               },
-               '>' => match chars.peek() {
-                    Some(&'=') => {
-                         chars.next();
-                         tokens.push(Token::GreaterEqual);
-                    }
-                    _ => tokens.push(Token::Greater),
-               },
-               '|' => match chars.peek() {
-                    Some(&'|') => {
-                         chars.next();
-                         tokens.push(Token::Or);
-                    }
-                    _ => return Err(format!("Invalid token: '{}' at line {}", c, line_number)),
-               },
-               '&' => match chars.peek() {
-                    Some(&'&') => {
-                         chars.next();
-                         tokens.push(Token::And);
-                    }
-                    _ => return Err(format!("Invalid token: '{}' at line {}", c, line_number)),
-               },
-               '[' => tokens.push(Token::LBracket),
-               ']' => tokens.push(Token::RBracket),
-               _ => return Err(format!("Invalid token: '{}' at line {}", c, line_number)),
+               }
+
+              _ => {
+                   tokens.push(Token {
+                        token_type: TokenTypes::Error,
+                        line_number,
+                        column_number,
+                        value: c.to_string(),
+                   });
+              }
           }
      }
      Ok(tokens)
