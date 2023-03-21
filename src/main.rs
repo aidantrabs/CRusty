@@ -24,17 +24,24 @@ fn main() {
 
     let input = fs::read_to_string(filename).expect("Unable to read file");
 
+    writeln!(valid_file,
+        "{0: <15} | {1: <15} | {2: <15} | {3: <15}",
+        "Token Type", "Line Number", "Column Number", "Value"
+    );
+
     match lexer::get_next_token(&input) {
         Ok(tokens) => {
             for token in tokens {
-                writeln!(valid_file, "{:?}", token).expect("Unable to write to file");
+                writeln!(valid_file, "{:?} | {:?} | {:?} | {:?}", 
+                    token.token_type, token.line_number, token.column_number, token.value
+                ).expect("Unable to write to file");
             }
         }
         Err(e) => {
             writeln!(error_file, "{}", e).expect("Unable to write to file");
         }
-    }
+    }   
 
     let tokens = lexer::get_next_token(&input);
-    println!("{:?}", tokens);
+    println!("{:?}", tokens.unwrap());
 }
