@@ -24,7 +24,7 @@ fn main() {
 
     let input = fs::read_to_string(filename).expect("Unable to read file");
 
-    match lexer::lex(&input) {
+    match lexer::get_next_token(&input) {
         Ok(tokens) => {
             for token in tokens {
                 writeln!(valid_file, "{:?}", token).expect("Unable to write to file");
@@ -35,6 +35,6 @@ fn main() {
         }
     }
 
-    let tokens = lexer::lex(&input);
+    let tokens = lexer::get_next_token(&input);
     println!("{:?}", tokens);
 }
