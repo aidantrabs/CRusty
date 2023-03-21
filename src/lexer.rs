@@ -62,7 +62,7 @@ pub struct Token {
 }
 
 /* 
-     @Description: Lexical Analyzer, converts input code into tokens, which are printed on different lines with line number, if an error is found, it is printed, but the program continues to run and tokenize the rest of the code
+     @Description: Lexical Analyzer
      @Param: input - String
      @Return: Token on different line with line number
 */
