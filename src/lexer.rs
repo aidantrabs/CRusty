@@ -1,9 +1,13 @@
+use std::fs;
+use std::fs::File;
+use std::io::prelude::*;
+
 /*
      @Description: Enum of all possible tokens
      @Params: None
      @Returns: None
 */
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum TokenTypes {
      Def,
      Type(String),
@@ -169,6 +173,17 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                               column_number,
                               value: number.clone(),
                          });
+                    }
+
+                    if let Some(&c) = chars.peek() {
+                         if c.is_alphabetic()  {
+                              tokens.push(Token {
+                                   token_type: TokenTypes::Error,
+                                   line_number,
+                                   column_number: column_number + 1,
+                                   value: String::from("Invalid token - ".to_owned() + &c.to_string()),
+                              });
+                         }
                     }
                }
 
@@ -375,10 +390,50 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                         token_type: TokenTypes::Error,
                         line_number,
                         column_number,
-                        value: String::from("Unknown token"),
+                        value: String::from("Invalid token - ".to_owned() + &c.to_string()),
                    });
               }
           }
      }
      Ok(tokens)
+}
+
+/* 
+     @Description: Runs the get_next_token function on an input file
+     @Params: file_name: String
+     @Returns: Result<Vec<Token>, String>
+*/
+pub fn run_lexical_analysis(file_name: String) {
+     let mut error_file = File::create("error.log").expect("Unable to create file");
+     let mut valid_file = File::create("valid.log").expect("Unable to create file");
+ 
+     let input = fs::read_to_string(file_name).expect("Unable to read file");
+ 
+     writeln!(valid_file,
+         "{0: <15} | {1: <15} | {2: <15} | {3: <15}",
+         "Token Type", "Line Number", "Column Number", "Value"
+     ).expect("Unable to write to file");
+ 
+     match get_next_token(&input) {
+         Ok(tokens) => {
+             for token in tokens {
+                 if token.token_type == TokenTypes::Error {
+                     writeln!(error_file, "{:?} | {:?} | {:?} | {:?}", 
+                         token.token_type, token.line_number, token.column_number, token.value
+                     ).expect("Unable to write to file");
+                     continue;
+                 }
+ 
+                 writeln!(valid_file, "{:?} | {:?} | {:?} | {:?}", 
+                     token.token_type, token.line_number, token.column_number, token.value
+                 ).expect("Unable to write to file");
+             }
+         }
+         Err(e) => {
+             writeln!(error_file, "{}", e).expect("Unable to write to file");
+         }
+     }   
+ 
+     let tokens = get_next_token(&input);
+     println!("{:?}", tokens.unwrap());
 }
