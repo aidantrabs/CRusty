@@ -1,9 +1,5 @@
 use std::env;
-use std::fs;
 use std::process;
-use std::fs::File;
-use std::io::prelude::*;
-
 mod lexer;
 
 /*
@@ -19,29 +15,5 @@ fn main() {
     }
 
     let filename = &args[1];
-    let mut error_file = File::create("error.log").expect("Unable to create file");
-    let mut valid_file = File::create("valid.log").expect("Unable to create file");
-
-    let input = fs::read_to_string(filename).expect("Unable to read file");
-
-    writeln!(valid_file,
-        "{0: <15} | {1: <15} | {2: <15} | {3: <15}",
-        "Token Type", "Line Number", "Column Number", "Value"
-    );
-
-    match lexer::get_next_token(&input) {
-        Ok(tokens) => {
-            for token in tokens {
-                writeln!(valid_file, "{:?} | {:?} | {:?} | {:?}", 
-                    token.token_type, token.line_number, token.column_number, token.value
-                ).expect("Unable to write to file");
-            }
-        }
-        Err(e) => {
-            writeln!(error_file, "{}", e).expect("Unable to write to file");
-        }
-    }   
-
-    let tokens = lexer::get_next_token(&input);
-    println!("{:?}", tokens.unwrap());
+    lexer::run_lexical_analysis(filename.to_string());
 }
