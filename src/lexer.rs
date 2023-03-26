@@ -177,6 +177,7 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                          "void" => TokenTypes::Type(ident.clone()),
                          _ => TokenTypes::Ident(ident.clone()),
                     };
+                    
                     tokens.push(Token {
                          token_type,
                          line_number,
