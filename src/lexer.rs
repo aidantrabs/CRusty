@@ -1,6 +1,7 @@
-use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
+use std::fmt;
+use comfy_table::Table;
 
 /*
      @Description: Enum of all possible tokens
@@ -52,6 +53,54 @@ pub enum TokenTypes {
      Error,
 }
 
+impl fmt::Display for TokenTypes {
+     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+          match *self {
+               TokenTypes::Def => write!(f, "Def"),
+               TokenTypes::Type(ref s) => write!(f, "Type({})", s),
+               TokenTypes::Ident(ref s) => write!(f, "Ident({})", s),
+               TokenTypes::LParen => write!(f, "LParen"),
+               TokenTypes::RParen => write!(f, "RParen"),
+               TokenTypes::Comma => write!(f, "Comma"),
+               TokenTypes::Semicolon => write!(f, "Semicolon"),
+               TokenTypes::Assign => write!(f, "Assign"),
+               TokenTypes::Plus => write!(f, "Plus"),
+               TokenTypes::PlusAssign => write!(f, "PlusAssign"),
+               TokenTypes::Minus => write!(f, "Minus"),
+               TokenTypes::MinusEqual => write!(f, "MinusEqual"),
+               TokenTypes::Asterisk => write!(f, "Asterisk"),
+               TokenTypes::AsteriskEqual => write!(f, "AsteriskEqual"),
+               TokenTypes::Divide => write!(f, "Divide"),
+               TokenTypes::DivideEqual => write!(f, "DivideEqual"),
+               TokenTypes::Modulo => write!(f, "Modulo"),
+               TokenTypes::ModuloEqual => write!(f, "ModuloEqual"),
+               TokenTypes::If => write!(f, "If"),
+               TokenTypes::Then => write!(f, "Then"),
+               TokenTypes::Else => write!(f, "Else"),
+               TokenTypes::Fi => write!(f, "Fi"),
+               TokenTypes::While => write!(f, "While"),
+               TokenTypes::Do => write!(f, "Do"),
+               TokenTypes::Od => write!(f, "Od"),
+               TokenTypes::Print => write!(f, "Print"),
+               TokenTypes::Return => write!(f, "Return"),
+               TokenTypes::IntegerLiteral(ref i) => write!(f, "IntegerLiteral({})", i),
+               TokenTypes::DoubleLiteral(ref d) => write!(f, "DoubleLiteral({})", d),
+               TokenTypes::Or => write!(f, "Or"),
+               TokenTypes::And => write!(f, "And"),
+               TokenTypes::Not => write!(f, "Not"),
+               TokenTypes::Less => write!(f, "Less"),
+               TokenTypes::Greater => write!(f, "Greater"),
+               TokenTypes::Equal => write!(f, "Equal"),
+               TokenTypes::LessEqual => write!(f, "LessEqual"),
+               TokenTypes::GreaterEqual => write!(f, "GreaterEqual"),
+               TokenTypes::NotEqual => write!(f, "NotEqual"),
+               TokenTypes::LBracket => write!(f, "LBracket"),
+               TokenTypes::RBracket => write!(f, "RBracket"),
+               TokenTypes::Error => write!(f, "Error"),
+          }
+     }
+}
+
 /*
      @Description: Struct for tokens
      @Params: None
@@ -62,7 +111,7 @@ pub struct Token {
      pub token_type: TokenTypes,
      pub line_number: usize,
      pub column_number: usize,
-     pub value: String,
+     pub lexeme: String,
 }
 
 /* 
@@ -127,7 +176,7 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                          token_type,
                          line_number,
                          column_number,
-                         value: ident.as_str().to_string(),
+                         lexeme: ident.as_str().to_string(),
                     });
                }
 
@@ -162,7 +211,7 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                               ),
                               line_number,
                               column_number,
-                              value: number.clone(),
+                              lexeme: number.clone(),
                          });
                     } else {
                          tokens.push(Token {
@@ -171,7 +220,7 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                               ),
                               line_number,
                               column_number,
-                              value: number.clone(),
+                              lexeme: number.clone(),
                          });
                     }
 
@@ -181,7 +230,7 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                                    token_type: TokenTypes::Error,
                                    line_number,
                                    column_number: column_number + 1,
-                                   value: String::from("Invalid token - ".to_owned() + &c.to_string()),
+                                   lexeme: String::from("".to_owned() + &c.to_string()),
                               });
                          }
                     }
@@ -191,36 +240,62 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                     token_type: TokenTypes::LParen,
                     line_number,
                     column_number,
-                    value: String::from("("),
+                    lexeme: String::from("("),
                }),
 
                ')' => tokens.push(Token {
                     token_type: TokenTypes::RParen,
                     line_number,
                     column_number,
-                    value: String::from(")"),
+                    lexeme: String::from(")"),
+               }),
+
+               '[' => tokens.push(Token {
+                    token_type: TokenTypes::LBracket,
+                    line_number,
+                    column_number,
+                    lexeme: String::from("["),
+               }),
+
+               ']' => tokens.push(Token {
+                    token_type: TokenTypes::RBracket,
+                    line_number,
+                    column_number,
+                    lexeme: String::from("]"),
                }),
 
                ',' => tokens.push(Token {
                     token_type: TokenTypes::Comma,
                     line_number,
                     column_number,
-                    value: String::from(","),
+                    lexeme: String::from(","),
                }),
 
                ';' => tokens.push(Token {
                     token_type: TokenTypes::Semicolon,
                     line_number,
                     column_number,
-                    value: String::from(";"),
+                    lexeme: String::from(";"),
                }),
 
-               '=' => tokens.push(Token {
-                    token_type: TokenTypes::Assign,
-                    line_number,
-                    column_number,
-                    value: String::from("="),
-               }),
+               '=' => {
+                    if let Some(&'=') = chars.peek() {
+                         chars.next();
+                         tokens.push(Token {
+                              token_type: TokenTypes::Equal,
+                              line_number,
+                              column_number,
+                              lexeme: String::from("=="),
+                         });
+                    } else {
+                         tokens.push(Token {
+                              token_type: TokenTypes::Assign,
+                              line_number,
+                              column_number,
+                              lexeme: String::from("="),
+                         });
+                    }
+               },
 
                '+' => {
                     if let Some(&'=') = chars.peek() {
@@ -229,14 +304,14 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                               token_type: TokenTypes::PlusAssign,
                               line_number,
                               column_number,
-                              value: String::from("+="),
+                              lexeme: String::from("+="),
                          });
                     } else {
                          tokens.push(Token {
                               token_type: TokenTypes::Plus,
                               line_number,
                               column_number,
-                              value: String::from("+"),
+                              lexeme: String::from("+"),
                          });
                     }
                }
@@ -248,14 +323,14 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                               token_type: TokenTypes::MinusEqual,
                               line_number,
                               column_number,
-                              value: String::from("-="),
+                              lexeme: String::from("-="),
                          });
                     } else {
                          tokens.push(Token {
                               token_type: TokenTypes::Minus,
                               line_number,
                               column_number,
-                              value: String::from("-"),
+                              lexeme: String::from("-"),
                          });
                     }
                }
@@ -267,14 +342,14 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                               token_type: TokenTypes::AsteriskEqual,
                               line_number,
                               column_number,
-                              value: String::from("*="),
+                              lexeme: String::from("*="),
                          });
                     } else {
                          tokens.push(Token {
                               token_type: TokenTypes::Asterisk,
                               line_number,
                               column_number,
-                              value: String::from("*"),
+                              lexeme: String::from("*"),
                          });
                     }
                }
@@ -286,14 +361,14 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                               token_type: TokenTypes::DivideEqual,
                               line_number,
                               column_number,
-                              value: String::from("/="),
+                              lexeme: String::from("/="),
                          });
                     } else {
                          tokens.push(Token {
                               token_type: TokenTypes::Divide,
                               line_number,
                               column_number,
-                              value: String::from("/"),
+                              lexeme: String::from("/"),
                          });
                     }
                }
@@ -305,14 +380,14 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                               token_type: TokenTypes::ModuloEqual,
                               line_number,
                               column_number,
-                              value: String::from("%="),
+                              lexeme: String::from("%="),
                          });
                     } else {
                          tokens.push(Token {
                               token_type: TokenTypes::Modulo,
                               line_number,
                               column_number,
-                              value: String::from("%"),
+                              lexeme: String::from("%"),
                          });
                     }
                }
@@ -324,7 +399,7 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                               token_type: TokenTypes::LessEqual,
                               line_number,
                               column_number,
-                              value: String::from("<="),
+                              lexeme: String::from("<="),
                          });
                     } 
 
@@ -334,14 +409,14 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                               token_type: TokenTypes::NotEqual,
                               line_number,
                               column_number,
-                              value: String::from("<>"),
+                              lexeme: String::from("<>"),
                          });
                     } else {
                          tokens.push(Token {
                               token_type: TokenTypes::Less,
                               line_number,
                               column_number,
-                              value: String::from("<"),
+                              lexeme: String::from("<"),
                          });
                     }
                }
@@ -353,14 +428,14 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                               token_type: TokenTypes::GreaterEqual,
                               line_number,
                               column_number,
-                              value: String::from(">="),
+                              lexeme: String::from(">="),
                          });
                     } else {
                          tokens.push(Token {
                               token_type: TokenTypes::Greater,
                               line_number,
                               column_number,
-                              value: String::from(">"),
+                              lexeme: String::from(">"),
                          });
                     }
                }
@@ -372,7 +447,7 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                               token_type: TokenTypes::NotEqual,
                               line_number,
                               column_number,
-                              value: String::from("!="),
+                              lexeme: String::from("!="),
 
                          });
                     } else {
@@ -380,17 +455,17 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                               token_type: TokenTypes::Not,
                               line_number,
                               column_number,
-                              value: String::from("!"),
+                              lexeme: String::from("!"),
                          });
                     }
                }
 
-              _ => {
+               _ => {
                    tokens.push(Token {
                         token_type: TokenTypes::Error,
                         line_number,
                         column_number,
-                        value: String::from("Invalid token - ".to_owned() + &c.to_string()),
+                        lexeme: String::from("".to_owned() + &c.to_string()),
                    });
               }
           }
@@ -399,41 +474,56 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
 }
 
 /* 
-     @Description: Runs the get_next_token function on an input file
+     @Description: Runs the get_next_token function on two buffers of text and writes to file
      @Params: file_name: String
-     @Returns: Result<Vec<Token>, String>
+     @Returns: None
 */
 pub fn run_lexical_analysis(file_name: String) {
-     let mut error_file = File::create("error.log").expect("Unable to create file");
-     let mut valid_file = File::create("valid.log").expect("Unable to create file");
- 
-     let input = fs::read_to_string(file_name).expect("Unable to read file");
- 
-     writeln!(valid_file,
-         "{0: <15} | {1: <15} | {2: <15} | {3: <15}",
-         "Token Type", "Line Number", "Column Number", "Value"
-     ).expect("Unable to write to file");
- 
-     match get_next_token(&input) {
-         Ok(tokens) => {
-             for token in tokens {
-                 if token.token_type == TokenTypes::Error {
-                     writeln!(error_file, "{:?} | {:?} | {:?} | {:?}", 
-                         token.token_type, token.line_number, token.column_number, token.value
-                     ).expect("Unable to write to file");
-                     continue;
-                 }
- 
-                 writeln!(valid_file, "{:?} | {:?} | {:?} | {:?}", 
-                     token.token_type, token.line_number, token.column_number, token.value
-                 ).expect("Unable to write to file");
-             }
-         }
-         Err(e) => {
-             writeln!(error_file, "{}", e).expect("Unable to write to file");
-         }
+     let mut error_file = File::create("data/error.log").expect("Unable to create file");
+     let mut valid_file = File::create("data/valid.log").expect("Unable to create file");
+
+     let mut valid_table = Table::new();
+     let mut error_table = Table::new();
+
+     let mut buffer1 = String::new();
+     let mut buffer2 = String::new();
+     let mut file = File::open(file_name).expect("Unable to open file");
+
+     file.read_to_string(&mut buffer2).expect("Unable to read file");
+     buffer1.push_str(&buffer2);
+     
+     valid_table.set_header(vec!["Token Type", "Line Number", "Column Number", "Lexeme"]);
+     error_table.set_header(vec!["Token Type", "Line Number", "Column Number", "Lexeme"]);
+     
+     match get_next_token(&buffer1) {
+          Ok(tokens) => {
+               for token in tokens {
+                    if token.token_type == TokenTypes::Error {
+                         error_table.add_row(vec![
+                              token.token_type.to_string(),
+                              token.line_number.to_string(),
+                              token.column_number.to_string(),
+                              token.lexeme.to_string(),
+                         ]);
+                    }
+
+                    else {
+                         valid_table.add_row(vec![
+                              token.token_type.to_string(),
+                              token.line_number.to_string(),
+                              token.column_number.to_string(),
+                              token.lexeme.to_string(),
+                         ]);
+                    }
+               }
+          }
+          Err(e) => {
+               writeln!(error_file, "{}", e).expect("Unable to write to file");
+          }
      }   
  
-     let tokens = get_next_token(&input);
-     println!("{:?}", tokens.unwrap());
+     // let tokens = get_next_token(&buffer1);
+     // println!("{:?}", tokens.unwrap()); 
+     writeln!(valid_file, "{}", valid_table).expect("Unable to write to file");
+     writeln!(error_file, "{}", error_table).expect("Unable to write to file");
 }
