@@ -53,6 +53,11 @@ pub enum TokenTypes {
      Error,
 }
 
+/*
+     @Description: String representation of the token types
+     @Params: None
+     @Returns: None
+*/
 impl fmt::Display for TokenTypes {
      fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
           match *self {
