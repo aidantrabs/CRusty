@@ -115,7 +115,7 @@ pub struct Token {
 }
 
 /* 
-     @Description: Lexical Analyzer
+     @Description: Lexical Analyzer method
      @Param: input - String
      @Return: Token on different line with line number
 */
