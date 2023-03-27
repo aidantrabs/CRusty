@@ -37,6 +37,7 @@ pub enum TokenTypes {
      Od,
      Print,
      Return,
+     Eof,
      IntegerLiteral(i32),
      DoubleLiteral(f64),
      Or,
@@ -88,6 +89,7 @@ impl fmt::Display for TokenTypes {
                TokenTypes::Od => write!(f, "Od"),
                TokenTypes::Print => write!(f, "Print"),
                TokenTypes::Return => write!(f, "Return"),
+               TokenTypes::Eof => write!(f, "Eof"),
                TokenTypes::IntegerLiteral(ref i) => write!(f, "IntegerLiteral({})", i),
                TokenTypes::DoubleLiteral(ref d) => write!(f, "DoubleLiteral({})", d),
                TokenTypes::Or => write!(f, "Or"),
@@ -466,8 +468,15 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
                     }
                }
 
+               '.' => tokens.push(Token {
+                    token_type: TokenTypes::Eof,
+                    line_number,
+                    column_number,
+                    lexeme: String::from("."),
+               }),
+
                _ => {
-                   tokens.push(Token {
+                    tokens.push(Token {
                         token_type: TokenTypes::Error,
                         line_number,
                         column_number,
