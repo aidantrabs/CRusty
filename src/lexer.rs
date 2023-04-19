@@ -494,8 +494,8 @@ pub fn get_next_token(input: &str) -> Result<Vec<Token>, String> {
      @Returns: None
 */
 pub fn run_lexical_analysis(file_name: String) {
-     let mut error_file = File::create("data/error.log").expect("Unable to create file");
-     let mut valid_file = File::create("data/valid.log").expect("Unable to create file");
+     let mut error_file = File::create("data/output/lexer-error.log").expect("Unable to create file");
+     let mut valid_file = File::create("data/output/lexer-valid.log").expect("Unable to create file");
 
      let mut valid_table = Table::new();
      let mut error_table = Table::new();
