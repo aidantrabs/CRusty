@@ -527,8 +527,6 @@ impl Lexer {
                }
           }
 
-          // let tokens = get_next_token(&buffer1);
-          // println!("{:?}", tokens.unwrap()); 
           writeln!(valid_file, "{}", valid_table).expect("Unable to write to file");
           writeln!(error_file, "{}", error_table).expect("Unable to write to file");
 
