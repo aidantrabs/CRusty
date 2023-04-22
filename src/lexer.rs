@@ -116,9 +116,9 @@ impl fmt::Display for TokenTypes {
 #[derive(Debug)]
 pub struct Token {
      pub token_type: TokenTypes,
+     pub lexeme: String,
      pub line_number: usize,
      pub column_number: usize,
-     pub lexeme: String,
 }
 
 /*
@@ -201,9 +201,9 @@ impl Lexer {
                          
                          tokens.push(Token {
                               token_type,
+                              lexeme: ident.as_str().to_string(),
                               line_number,
                               column_number,
-                              lexeme: ident.as_str().to_string(),
                          });
                     }
      
@@ -236,18 +236,18 @@ impl Lexer {
                                    token_type: TokenTypes::DoubleLiteral(
                                         number.parse().expect("Unable to parse double"),
                                    ),
+                                   lexeme: number.clone(),
                                    line_number,
                                    column_number,
-                                   lexeme: number.clone(),
                               });
                          } else {
                               tokens.push(Token {
                                    token_type: TokenTypes::IntegerLiteral(
                                         number.parse().expect("Unable to parse integer"),
                                    ),
+                                   lexeme: number.clone(),
                                    line_number,
                                    column_number,
-                                   lexeme: number.clone(),
                               });
                          }
      
@@ -255,9 +255,9 @@ impl Lexer {
                               if c.is_alphabetic()  {
                                    tokens.push(Token {
                                         token_type: TokenTypes::Error,
+                                        lexeme: String::from("".to_owned() + &c.to_string()),
                                         line_number,
                                         column_number: column_number + 1,
-                                        lexeme: String::from("".to_owned() + &c.to_string()),
                                    });
                               }
                          }
@@ -265,44 +265,44 @@ impl Lexer {
      
                     '(' => tokens.push(Token {
                          token_type: TokenTypes::LParen,
+                         lexeme: String::from("("),
                          line_number,
                          column_number,
-                         lexeme: String::from("("),
                     }),
      
                     ')' => tokens.push(Token {
                          token_type: TokenTypes::RParen,
+                         lexeme: String::from(")"),
                          line_number,
                          column_number,
-                         lexeme: String::from(")"),
                     }),
      
                     '[' => tokens.push(Token {
                          token_type: TokenTypes::LBracket,
+                         lexeme: String::from("["),
                          line_number,
                          column_number,
-                         lexeme: String::from("["),
                     }),
      
                     ']' => tokens.push(Token {
                          token_type: TokenTypes::RBracket,
+                         lexeme: String::from("]"),
                          line_number,
                          column_number,
-                         lexeme: String::from("]"),
                     }),
      
                     ',' => tokens.push(Token {
                          token_type: TokenTypes::Comma,
+                         lexeme: String::from(","),
                          line_number,
                          column_number,
-                         lexeme: String::from(","),
                     }),
      
                     ';' => tokens.push(Token {
                          token_type: TokenTypes::Semicolon,
+                         lexeme: String::from(";"),
                          line_number,
                          column_number,
-                         lexeme: String::from(";"),
                     }),
      
                     '=' => {
@@ -310,16 +310,16 @@ impl Lexer {
                               chars.next();
                               tokens.push(Token {
                                    token_type: TokenTypes::Equal,
+                                   lexeme: String::from("=="),
                                    line_number,
                                    column_number,
-                                   lexeme: String::from("=="),
                               });
                          } else {
                               tokens.push(Token {
                                    token_type: TokenTypes::Assign,
+                                   lexeme: String::from("="),
                                    line_number,
                                    column_number,
-                                   lexeme: String::from("="),
                               });
                          }
                     },
@@ -329,16 +329,16 @@ impl Lexer {
                               chars.next();
                               tokens.push(Token {
                                    token_type: TokenTypes::PlusAssign,
+                                   lexeme: String::from("+="),
                                    line_number,
                                    column_number,
-                                   lexeme: String::from("+="),
                               });
                          } else {
                               tokens.push(Token {
                                    token_type: TokenTypes::Plus,
+                                   lexeme: String::from("+"),
                                    line_number,
                                    column_number,
-                                   lexeme: String::from("+"),
                               });
                          }
                     }
@@ -348,16 +348,16 @@ impl Lexer {
                               chars.next();
                               tokens.push(Token {
                                    token_type: TokenTypes::MinusEqual,
+                                   lexeme: String::from("-="),
                                    line_number,
                                    column_number,
-                                   lexeme: String::from("-="),
                               });
                          } else {
                               tokens.push(Token {
                                    token_type: TokenTypes::Minus,
+                                   lexeme: String::from("-"),
                                    line_number,
                                    column_number,
-                                   lexeme: String::from("-"),
                               });
                          }
                     }
@@ -367,16 +367,16 @@ impl Lexer {
                               chars.next();
                               tokens.push(Token {
                                    token_type: TokenTypes::AsteriskEqual,
+                                   lexeme: String::from("*="),
                                    line_number,
                                    column_number,
-                                   lexeme: String::from("*="),
                               });
                          } else {
                               tokens.push(Token {
                                    token_type: TokenTypes::Asterisk,
+                                   lexeme: String::from("*"),
                                    line_number,
                                    column_number,
-                                   lexeme: String::from("*"),
                               });
                          }
                     }
@@ -386,16 +386,16 @@ impl Lexer {
                               chars.next();
                               tokens.push(Token {
                                    token_type: TokenTypes::DivideEqual,
+                                   lexeme: String::from("/="),
                                    line_number,
                                    column_number,
-                                   lexeme: String::from("/="),
                               });
                          } else {
                               tokens.push(Token {
                                    token_type: TokenTypes::Divide,
+                                   lexeme: String::from("/"),
                                    line_number,
                                    column_number,
-                                   lexeme: String::from("/"),
                               });
                          }
                     }
@@ -405,16 +405,16 @@ impl Lexer {
                               chars.next();
                               tokens.push(Token {
                                    token_type: TokenTypes::ModuloEqual,
+                                   lexeme: String::from("%="),
                                    line_number,
                                    column_number,
-                                   lexeme: String::from("%="),
                               });
                          } else {
                               tokens.push(Token {
                                    token_type: TokenTypes::Modulo,
+                                   lexeme: String::from("%"),
                                    line_number,
                                    column_number,
-                                   lexeme: String::from("%"),
                               });
                          }
                     }
@@ -424,9 +424,9 @@ impl Lexer {
                               chars.next();
                               tokens.push(Token {
                                    token_type: TokenTypes::LessEqual,
+                                   lexeme: String::from("<="),
                                    line_number,
                                    column_number,
-                                   lexeme: String::from("<="),
                               });
                          } 
      
@@ -434,16 +434,16 @@ impl Lexer {
                               chars.next();
                               tokens.push(Token {
                                    token_type: TokenTypes::NotEqual,
+                                   lexeme: String::from("<>"),
                                    line_number,
                                    column_number,
-                                   lexeme: String::from("<>"),
                               });
                          } else {
                               tokens.push(Token {
                                    token_type: TokenTypes::Less,
+                                   lexeme: String::from("<"),
                                    line_number,
                                    column_number,
-                                   lexeme: String::from("<"),
                               });
                          }
                     }
@@ -453,16 +453,16 @@ impl Lexer {
                               chars.next();
                               tokens.push(Token {
                                    token_type: TokenTypes::GreaterEqual,
+                                   lexeme: String::from(">="),
                                    line_number,
                                    column_number,
-                                   lexeme: String::from(">="),
                               });
                          } else {
                               tokens.push(Token {
                                    token_type: TokenTypes::Greater,
+                                   lexeme: String::from(">"),
                                    line_number,
                                    column_number,
-                                   lexeme: String::from(">"),
                               });
                          }
                     }
@@ -472,34 +472,33 @@ impl Lexer {
                               chars.next();
                               tokens.push(Token {
                                    token_type: TokenTypes::NotEqual,
+                                   lexeme: String::from("!="),
                                    line_number,
                                    column_number,
-                                   lexeme: String::from("!="),
-     
                               });
                          } else {
                               tokens.push(Token {
                                    token_type: TokenTypes::Not,
+                                   lexeme: String::from("!"),
                                    line_number,
                                    column_number,
-                                   lexeme: String::from("!"),
                               });
                          }
                     }
      
                     '.' => tokens.push(Token {
                          token_type: TokenTypes::Eof,
+                         lexeme: String::from("."),
                          line_number,
                          column_number,
-                         lexeme: String::from("."),
                     }),
      
                     _ => {
                          tokens.push(Token {
                              token_type: TokenTypes::Error,
+                             lexeme: String::from("".to_owned() + &c.to_string()),
                              line_number,
                              column_number,
-                             lexeme: String::from("".to_owned() + &c.to_string()),
                         });
                    }
                }
@@ -512,18 +511,18 @@ impl Lexer {
                if token.token_type == TokenTypes::Error {
                     error_table.add_row(vec![
                          token.token_type.to_string(),
+                         token.lexeme.to_string(),
                          token.line_number.to_string(),
                          token.column_number.to_string(),
-                         token.lexeme.to_string(),
                     ]);
                }
 
                else {
                     valid_table.add_row(vec![
                          token.token_type.to_string(),
+                         token.lexeme.to_string(),
                          token.line_number.to_string(),
                          token.column_number.to_string(),
-                         token.lexeme.to_string(),
                     ]);
                }
           }
