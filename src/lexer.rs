@@ -38,6 +38,7 @@ pub enum TokenTypes {
      Print,
      Return,
      Eof,
+     Period,
      IntegerLiteral(i32),
      DoubleLiteral(f64),
      Or,
@@ -90,6 +91,7 @@ impl fmt::Display for TokenTypes {
                TokenTypes::Print => write!(f, "Print"),
                TokenTypes::Return => write!(f, "Return"),
                TokenTypes::Eof => write!(f, "Eof"),
+               TokenTypes::Period => write!(f, "Period"),
                TokenTypes::IntegerLiteral(ref i) => write!(f, "IntegerLiteral({})", i),
                TokenTypes::DoubleLiteral(ref d) => write!(f, "DoubleLiteral({})", d),
                TokenTypes::Or => write!(f, "Or"),
@@ -128,9 +130,9 @@ pub struct Token {
 */
 pub struct Lexer {
      pub tokens: Vec<Token>,
+     pub lexeme: String,
      pub line_number: usize,
      pub column_number: usize,
-     pub lexeme: String,
 }
 
 /*
@@ -486,12 +488,42 @@ impl Lexer {
                          }
                     }
      
-                    '.' => tokens.push(Token {
-                         token_type: TokenTypes::Eof,
-                         lexeme: String::from("."),
-                         line_number,
-                         column_number,
-                    }),
+                    '.' => {
+                         if let Some(&c) = chars.peek() {
+                              if c.is_ascii_digit() {
+                                   let mut lexeme = String::from(".");
+                                   while let Some(&c) = chars.peek() {
+                                        if c.is_ascii_digit() {
+                                             lexeme.push(c);
+                                             chars.next();
+                                        } else {
+                                             break;
+                                        }
+                                   }
+     
+                                   tokens.push(Token {
+                                        token_type: TokenTypes::DoubleLiteral(lexeme.parse::<f64>().unwrap()),
+                                        lexeme,
+                                        line_number,
+                                        column_number,
+                                   });
+                              } else {
+                                   tokens.push(Token {
+                                        token_type: TokenTypes::Period,
+                                        lexeme: String::from("."),
+                                        line_number,
+                                        column_number,
+                                   });
+                              }
+                         } else {
+                              tokens.push(Token {
+                                   token_type: TokenTypes::Eof,
+                                   lexeme: String::from("."),
+                                   line_number,
+                                   column_number,
+                              });
+                         }
+                    }
      
                     _ => {
                          tokens.push(Token {
@@ -504,8 +536,8 @@ impl Lexer {
                }
           }
      
-          valid_table.set_header(vec!["Token Type", "Line Number", "Column Number", "Lexeme"]);
-          error_table.set_header(vec!["Token Type", "Line Number", "Column Number", "Lexeme"]);
+          valid_table.set_header(vec!["Token Type", "Lexeme", "Column Number", "Line Number"]);
+          error_table.set_header(vec!["Token Type", "Lexeme", "Column Number", "Line Number"]);
           
           for token in &tokens {
                if token.token_type == TokenTypes::Error {
