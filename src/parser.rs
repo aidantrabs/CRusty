@@ -1,240 +1,349 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
-#[derive(Debug, PartialEq, Eq, Hash)]
-enum NonTerminal {
-     Program,
-     FuncDecl,
-     FuncDef,
-     FuncDefRight,
-     Params,
-     ParamsRight,
-     FuncName,
-     Declarations,
-     Decl,
-     DeclRight,
-     Type,
-     Varlist,
-     VarlistRight,
-     StatementSequence,
-     Statement,
-     StatementSequenceRight,
-     OptionElse,
-     Expr,
-     Term,
-     TermRight,
-     VarRight,
-     Var,
-     Comp,
-     BranchFactorParen,
-     BranchFactor,
-     BranchFactorRight,
-     BranchTerm,
-     BranchTermRight,
-     BranchExpression,
-     ExpressionSequenceRight,
-     ExpressionSequence,
-     Factor,
-     FactorRight,
-     FactorParen,
+/*
+     @Description: Static variables for the first set, follow set, terminals, nonterminals, grammar, first and follow, and lookahead
+     @Params: None
+     @Returns: None
+*/
+static mut FIRST_SET_DICT: HashMap<String, HashSet<String>> = HashMap::new();
+static mut FOLLOW_SET_DICT: HashMap<String, HashSet<String>> = HashMap::new();
+static mut TERMINALS: HashSet<String> = HashSet::new();
+static mut NONTERMINALS: HashSet<String> = HashSet::new();
+static mut GRAMMAR: Vec<String> = Vec::new();
+static mut FIRST_AND_FOLLOW: Vec<(String, String, String)> = Vec::new();
+static mut LOOKAHEAD: HashMap<String, HashMap<String, String>> = HashMap::new();
+static mut START_SYMBOL: String = String::new();
+
+/*
+     @Description: Calculates the first set, follow set, and lookahead for each nonterminal
+     @Params: None
+     @Returns: None
+*/
+fn sets_and_table() {
+     unsafe {
+          for rule in &GRAMMAR {
+               let mut iter = rule.split(" ::= ");
+               let lhs = iter.next().unwrap();
+               NONTERMINALS.insert(lhs.to_string());
+          }
+
+          for rule in &GRAMMAR {
+               let mut iter = rule.split(" ::= ");
+               let lhs = iter.next().unwrap();
+               let rhs_symbols = iter.next().unwrap().split(" ");
+               for symbol in rhs_symbols {
+                    if !NONTERMINALS.contains(symbol) {
+                         TERMINALS.insert(symbol.to_string());
+                    }
+               }
+          }
+
+          first_set();
+          follow_set();
+
+          for rule in &FIRST_AND_FOLLOW {
+               let first_symbols = rule.1.split(" | ");
+               let follow_symbols = rule.2.split(" | ");
+               FIRST_SET_DICT.insert(rule.0.to_string(), HashSet::new());
+               FOLLOW_SET_DICT.insert(rule.0.to_string(), HashSet::new());
+               for symbol in first_symbols {
+                    FIRST_SET_DICT.get_mut(&rule.0).unwrap().insert(symbol.to_string());
+               }
+               for symbol in follow_symbols {
+                    FOLLOW_SET_DICT.get_mut(&rule.0).unwrap().insert(symbol.to_string());
+               }
+          }
+
+          lookahead_one();
+     }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
-enum Terminal {
-     Def,
-     Type,
-     Ident,
-     LParen,
-     RParen,
-     Comma,
-     Semicolon,
-     Assign,
-     Plus,
-     PlusAssign,
-     Minus,
-     MinusEqual,
-     Asterisk,
-     AsteriskEqual,
-     Divide,
-     DivideEqual,
-     Modulo,
-     ModuloEqual,
-     If,
-     Then,
-     Else,
-     Fi,
-     While,
-     Do,
-     Od,
-     Print,
-     Return,
-     Eof,
-     IntegerLiteral,
-     DoubleLiteral,
-     Or,
-     And,
-     Not,
-     Less,
-     Greater,
-     Equal,
-     LessEqual,
-     GreaterEqual,
-     NotEqual,
-     LBracket,
-     RBracket,
-     Error,
-}
+/*
+     @Description: Calculates the first set for each nonterminal
+     @Params: None
+     @Returns: None
+*/
+fn first_set() {
+     unsafe {
+          for rule in &GRAMMAR {
+               let mut iter = rule.split(" ::= ");
+               let lhs = iter.next().unwrap();
+               let rhs_symbols = iter.next().unwrap().split(" ");
 
-impl Terminal {
-     fn matches_token(&self, token: &Token) -> bool {
-          match (self, &token.token_type) {
-               (Terminal::Def, TokenTypes::Def) => true,
-               (Terminal::Type, TokenTypes::Type(_)) => true,
-               (Terminal::Ident, TokenTypes::Ident(_)) => true,
-               (Terminal::LParen, TokenTypes::LParen) => true,
-               (Terminal::RParen, TokenTypes::RParen) => true,
-               (Terminal::Comma, TokenTypes::Comma) => true,
-               (Terminal::Semicolon, TokenTypes::Semicolon) => true,
-               (Terminal::Assign, TokenTypes::Assign) => true,
-               (Terminal::Plus, TokenTypes::Plus) => true,
-               (Terminal::PlusAssign, TokenTypes::PlusAssign) => true,
-               (Terminal::Minus, TokenTypes::Minus) => true,
-               (Terminal::MinusEqual, TokenTypes::MinusEqual) => true,
-               (Terminal::Asterisk, TokenTypes::Asterisk) => true,
-               (Terminal::AsteriskEqual, TokenTypes::AsteriskEqual) => true,
-               (Terminal::Divide, TokenTypes::Divide) => true,
-               (Terminal::DivideEqual, TokenTypes::DivideEqual) => true,
-               (Terminal::Modulo, TokenTypes::Modulo) => true,
-               (Terminal::ModuloEqual, TokenTypes::ModuloEqual) => true,
-               (Terminal::If, TokenTypes::If) => true,
-               (Terminal::Then, TokenTypes::Then) => true,
-               (Terminal::Else, TokenTypes::Else) => true,
-               (Terminal::Fi, TokenTypes::Fi) => true,
-               (Terminal::While, TokenTypes::While) => true,
-               (Terminal::Do, TokenTypes::Do) => true,
-               (Terminal::Od, TokenTypes::Od) => true,
-               (Terminal::Print, TokenTypes::Print) => true,
-               (Terminal::Return, TokenTypes::Return) => true,
-               (Terminal::Eof, TokenTypes::Eof) => true,
-               (Terminal::IntegerLiteral, TokenTypes::IntegerLiteral(_)) => true,
-               (Terminal::DoubleLiteral, TokenTypes::DoubleLiteral(_)) => true,
-               (Terminal::Or, TokenTypes::Or) => true,
-               (Terminal::And, TokenTypes::And) => true,
-               (Terminal::Not, TokenTypes::Not) => true,
-               (Terminal::Less, TokenTypes::Less) => true,
-               (Terminal::Greater, TokenTypes::Greater) => true,
-               (Terminal::Equal, TokenTypes::Equal) => true,
-               (Terminal::LessEqual, TokenTypes::LessEqual) => true,
-               (Terminal::GreaterEqual, TokenTypes::GreaterEqual) => true,
-               (Terminal::NotEqual, TokenTypes::NotEqual) => true,
-               (Terminal::LBracket, TokenTypes::LBracket) => true,
-               (Terminal::RBracket, TokenTypes::RBracket) => true,
-               (Terminal::Error, TokenTypes::Error) => true,
-               _ => false,
+               NONTERMINALS.insert(lhs.to_string());
+
+               for symbol in rhs_symbols {
+                    let first_s = FIRST_SET_DICT.entry(symbol.to_string()).or_insert(HashSet::new());
+
+                    if symbol == "𝛜" {
+                         first_s.insert(symbol.to_string());
+                         break;
+                    } else {
+                         let first_rhs = FIRST_SET_DICT.get(symbol).unwrap();
+                         if !first_rhs.contains("𝛜") {
+                              first_s.extend(first_rhs.iter().cloned());
+                         break;
+                         } else {
+                              first_s.extend(first_rhs.iter().cloned().filter(|s| *s != "𝛜"));
+                              first_s.extend(FIRST_SET_DICT.get(lhs).unwrap().iter().cloned());
+                         }
+                    }
+               }
+
+               if !FIRST_SET_DICT.contains_key(lhs) {
+                    FIRST_SET_DICT.insert(lhs.to_string(), HashSet::new());
+               }
+               FIRST_SET_DICT.get_mut(lhs).unwrap().insert("𝛜".to_string());
           }
      }
 }
 
-#[derive(Debug)]
-enum Symbol {
-     NonTerminal(NonTerminal),
-     Terminal(Terminal),
-}
+/*
+     @Description: Calculates the follow set for each nonterminal
+     @Params: None
+     @Returns: None
+*/
+fn follow_set() {
+     unsafe {
+          START_SYMBOL = GRAMMAR[0].split(" ::= ").next().unwrap().to_string();
+          FOLLOW_SET_DICT.insert(START_SYMBOL.to_string(), HashSet::new());
+          FOLLOW_SET_DICT.get_mut(&START_SYMBOL).unwrap().insert("$".to_string());
 
-#[derive(Debug)]
-struct ParseTree {
-     symbol: Symbol,
-     children: Vec<ParseTree>,
-}
+          for rule in &GRAMMAR {
+               let mut iter = rule.split(" ::= ");
+               let lhs = iter.next().unwrap();
+               let rhs_symbols = iter.next().unwrap().split(" ");
 
-impl ParseTree {
-     fn new(symbol: Symbol) -> Self {
-          ParseTree {
-               symbol,
-               children: Vec::new(),
+               for (index, symbol) in rhs_symbols.enumerate() {
+                    if NONTERMINALS.contains(symbol) {
+                         let follow_s = FOLLOW_SET_DICT.entry(symbol.to_string()).or_insert(HashSet::new());
+                         let mut follow_rhs = FOLLOW_SET_DICT.get(lhs).unwrap().iter().cloned();
+                         if index < rhs_symbols.clone().count() - 1 {
+                              let mut first_rhs = FIRST_SET_DICT.get(rhs_symbols.clone().nth(index + 1).unwrap()).unwrap().iter().cloned();
+                              if first_rhs.contains("𝛜") {
+                                   first_rhs = first_rhs.filter(|s| *s != "𝛜");
+                                   follow_rhs.extend(first_rhs);
+                                   follow_rhs.extend(FOLLOW_SET_DICT.get(lhs).unwrap().iter().cloned());
+                              } else {
+                                   follow_rhs.extend(first_rhs);
+                              }
+                         } else {
+                              follow_rhs.extend(FOLLOW_SET_DICT.get(lhs).unwrap().iter().cloned());
+                         }
+                         follow_s.extend(follow_rhs);
+                    }
+               }
           }
      }
- 
-     fn add_child(&mut self, child: ParseTree) {
-          self.children.push(child);
+}
+
+/*
+     @Description: Calculates the lookahead for each nonterminal
+     @Params: None
+     @Returns: None
+*/
+fn lookahead_one() {
+     unsafe {
+          for rule in &GRAMMAR {
+               let mut iter = rule.split(" ::= ");
+               let lhs = iter.next().unwrap();
+               let rhs_symbols = iter.next().unwrap().split(" ");
+
+               for symbol in rhs_symbols {
+                    if NONTERMINALS.contains(symbol) {
+                         LOOKAHEAD.insert(symbol.to_string(), HashMap::new());
+                    }
+               }
+          }
+
+          for rule in &GRAMMAR {
+               let mut iter = rule.split(" ::= ");
+               let lhs = iter.next().unwrap();
+               let rhs_symbols = iter.next().unwrap().split(" ");
+
+               for (index, symbol) in rhs_symbols.enumerate() {
+                    if NONTERMINALS.contains(symbol) {
+                         let mut lookahead_s = LOOKAHEAD.get_mut(symbol).unwrap();
+                         let mut first_rhs = FIRST_SET_DICT.get(rhs_symbols.clone().nth(index + 1).unwrap()).unwrap().iter().cloned();
+                         if first_rhs.contains("𝛜") {
+                              first_rhs = first_rhs.filter(|s| *s != "𝛜");
+                              lookahead_s.extend(first_rhs);
+                              lookahead_s.extend(FOLLOW_SET_DICT.get(lhs).unwrap().iter().cloned());
+                         } else {
+                              lookahead_s.extend(first_rhs);
+                         }
+                    }
+               }
+          }
      }
 }
 
-struct Parser {
-     first: HashMap<NonTerminal, Vec<Terminal>>,
-     follow: HashMap<NonTerminal, Vec<Terminal>>,
+/*
+     @Description: Calculates the parsing table
+     @Params: None
+     @Returns: None
+*/
+fn parse_table() {
+     unsafe {
+          for rule in &GRAMMAR {
+               let mut iter = rule.split(" ::= ");
+               let lhs = iter.next().unwrap();
+               let rhs_symbols = iter.next().unwrap().split(" ");
+
+               for symbol in rhs_symbols {
+                    if NONTERMINALS.contains(symbol) {
+                         for lookahead in LOOKAHEAD.get(symbol).unwrap().keys() {
+                              TABLE.insert((lhs.to_string(), lookahead.to_string()), rule.to_string());
+                         }
+                    } else {
+                         TABLE.insert((lhs.to_string(), symbol.to_string()), rule.to_string());
+                    }
+               }
+          }
+     }
 }
 
-impl Parser {
-     fn initialize_first(&mut self) {
-          self.first.insert("program", vec!["def", "int", "double", "if", "while", "print", "return", "ID"]);
-          self.first.insert("funcDecl", vec!["def", "EPSILON"]);
-          self.first.insert("funcDef", vec!["def"]);
-          self.first.insert("funcDefRight", vec!["def", "EPSILON"]);
-          self.first.insert("params", vec!["int", "double", "EPSILON"]);
-          self.first.insert("paramsRight", vec![",", "EPSILON"]);
-          self.first.insert("funcName", vec!["ID"]);
-          self.first.insert("declarations", vec!["int", "double", "EPSILON"]);
-          self.first.insert("decl", vec!["int", "double"]);
-          self.first.insert("declRight", vec!["int", "double", "EPSILON"]);
-          self.first.insert("type", vec!["int", "double"]);
-          self.first.insert("varlist", vec!["ID"]);
-          self.first.insert("varlistRight", vec![",", "EPSILON"]);
-          self.first.insert("statementSequence", vec!["if", "while", "print", "return", "ID", "EPSILON"]);
-          self.first.insert("statement", vec!["if", "while", "print", "return", "ID", "EPSILON"]);
-          self.first.insert("statementSequenceRight", vec![";", "EPSILON"]);
-          self.first.insert("optionElse", vec!["else", "EPSILON"]);
-          self.first.insert("expr", vec!["ID", "NUMBER", "("]);
-          self.first.insert("term", vec!["ID", "NUMBER", "("]);
-          self.first.insert("termRight", vec!["+", "-", "EPSILON"]);
-          self.first.insert("varRight", vec!["[", "EPSILON"]);
-          self.first.insert("var", vec!["ID"]);
-          self.first.insert("comp", vec!["<", ">", "==", "<=", ">=", "<>"]);
-          self.first.insert("branchFactorParen", vec!["(", "not", "ID", "NUMBER", "EPSILON"]);
-          self.first.insert("branchFactor", vec!["(", "not"]);
-          self.first.insert("branchFactorRight", vec!["and", "EPSILON"]);
-          self.first.insert("branchTerm", vec!["(", "not"]);
-          self.first.insert("branchTermRight", vec!["or", "EPSILON"]);
-          self.first.insert("branchExpression", vec!["(", "not"]);
-          self.first.insert("expressionSequenceRight", vec![",", "EPSILON"]);
-          self.first.insert("expressionSequence", vec!["(", "ID", "NUMBER"]);
-          self.first.insert("factor", vec!["(", "ID", "NUMBER"]);
-          self.first.insert("factorRight", vec!["*", "/", "%", "EPSILON"]);
-          self.first.insert("factorParen", vec!["(", "EPSILON"]);
-     }
+/*
+     @Description: Parses the input string
+     @Params: input - the input string to parse
+     @Returns: None
+*/
+pub fn parse(input: &str) -> Result<(), String> {
+     unsafe {
+          let mut stack = vec!["$".to_string(), START_SYMBOL.to_string()];
+          let mut input_iter = input.split(" ");
+          let mut input_symbol = input_iter.next().unwrap().to_string();
+          let mut stack_symbol = stack.pop().unwrap();
 
-    fn initialize_follow(&mut self) {
-          self.follow.insert("program", vec!["$"]);
-          self.follow.insert("funcDecl", vec!["int", "double", "if", "while", "print", "return", "ID"]);
-          self.follow.insert("funcDef", vec![";"]);
-          self.follow.insert("funcDefRight", vec![";"]);
-          self.follow.insert("params", vec![")"]);
-          self.follow.insert("paramsRight", vec![")"]);
-          self.follow.insert("funcName", vec!["("]);
-          self.follow.insert("declarations", vec!["if", "while", "print", "return", "ID"]);
-          self.follow.insert("decl", vec![";"]);
-          self.follow.insert("declRight", vec![";"]);
-          self.follow.insert("type", vec!["ID"]);
-          self.follow.insert("varlist", vec![";", ",", ".", "(", ")", "]", "[", "then", "+", "-", "", "/", "%", "==", "<>", "<", ">"]);
-          self.follow.insert("varlistRight", vec![";", ",", ".", "(", ")", "]", "[", "then", "+", "-", "", "/", "%", "==", "<>", "<", ">"]);
-          self.follow.insert("statementSequence", vec![".", "fed", "fi", "od", "else"]);
-          self.follow.insert("statement", vec![".", ";", "fed", "fi", "od", "else"]);
-          self.follow.insert("statementSequenceRight", vec![".", ";", "fed", "fi", "od", "else"]);
-          self.follow.insert("optionElse", vec![".", ";", "fed", "fi", "od", "else"]);
-          self.follow.insert("expr", vec![".", ";", "fed", "fi", "od", "else", ")", "=", ">", "<", "]"]);
-          self.follow.insert("term", vec![".", ";", "fed", "fi", "od", "else", ")", "=", ">", "<", "]", "+", "-", "", "/"]);
-          self.follow.insert("termRight", vec![".", ";", "fed", "fi", "od", "else", ")", "=", ">", "<", "]", "+", "-", "", "/"]);
-          self.follow.insert("varRight", vec![";", ",", ".", "(", ")", "]", "[", "then", "+", "-", "", "/", "%", "==", "<>", "<", ">"]);
-          self.follow.insert("var", vec![";", ",", ".", "(", ")", "]", "[", "then", "+", "-", "", "/", "%", "==", "<>", "<", ">"]);
-          self.follow.insert("comp", vec![""]);
-          self.follow.insert("branchFactorParen", vec!["then", "do", ")", "or", "and"]);
-          self.follow.insert("branchFactor", vec!["then", "do", ")", "or", "and"]);
-          self.follow.insert("branchFactorRight", vec!["then", "do", ")", "or", "and"]);
-          self.follow.insert("branchTerm", vec!["then", "do", ")", "or", "and"]);
-          self.follow.insert("branchTermRight", vec!["then", "do", ")", "or", "and"]);
-          self.follow.insert("branchExpression", vec!["then", "do", ")", "or"]);
-          self.follow.insert("expressionSequenceRight", vec![")"]);
-          self.follow.insert("expressionSequence", vec![")"]);
-          self.follow.insert("factor", vec![".", ";", "fed", "fi", "od", "else", ")", "=", ">", "<", "]", "+", "-", "", "/"]);
-          self.follow.insert("factorRight", vec![".", ";", "fed", "fi", "od", "else", ")", "=", ">", "<", "]", "+", "-", "", "/"]);
-          self.follow.insert("factorParen", vec![".",";","fed","fi","od","else",")","=",">","<","]","+","-","*","/"]);
+          while stack_symbol != "$" {
+               if stack_symbol == input_symbol {
+                    input_symbol = input_iter.next().unwrap().to_string();
+                    stack_symbol = stack.pop().unwrap();
+               } else if TERMINALS.contains(&stack_symbol) {
+                    return Err(format!("Error: Expected {}, found {}", stack_symbol, input_symbol));
+               } else if TABLE.contains_key(&(stack_symbol.to_string(), input_symbol.to_string())) {
+                    let rule = TABLE.get(&(stack_symbol.to_string(), input_symbol.to_string())).unwrap();
+                    let mut iter = rule.split(" ::= ");
+                    let lhs = iter.next().unwrap();
+                    let rhs_symbols = iter.next().unwrap().split(" ").rev();
+                    for symbol in rhs_symbols {
+                         stack.push(symbol.to_string());
+                    }
+               } else {
+                    return Err(format!("Error: No rule for {} and {}", stack_symbol, input_symbol));
+               }
+               stack_symbol = stack.pop().unwrap();
+          }
+          Ok(())
      }
+}
+
+/*
+     @Description: Prints the grammar
+     @Params: None
+     @Returns: None
+*/
+pub fn print_grammar() {
+     unsafe {
+          println!("Grammar:");
+          for rule in &GRAMMAR {
+               println!("\t{}", rule);
+          }
+     }
+}
+
+/*
+     @Description: Prints the terminals
+     @Params: None
+     @Returns: None
+*/
+pub fn print_terminals() {
+     unsafe {
+          println!("Terminals:");
+          for terminal in &TERMINALS {
+               println!("\t{}", terminal);
+          }
+     }
+}
+
+/*
+     @Description: Prints the nonterminals
+     @Params: None
+     @Returns: None
+*/
+pub fn print_nonterminals() {
+     unsafe {
+          println!("Nonterminals:");
+          for nonterminal in &NONTERMINALS {
+               println!("\t{}", nonterminal);
+          }
+     }
+}
+
+/*
+     @Description: Prints the first set
+     @Params: None
+     @Returns: None
+*/
+pub fn print_first_set() {
+     unsafe {
+          println!("First Set:");
+          for (symbol, first_set) in &FIRST_SET_DICT {
+               print!("\t{}: ", symbol);
+               for first in first_set {
+                    print!("{} ", first);
+               }
+               println!("");
+          }
+     }
+}
+
+/*
+     @Description: Prints the follow set
+     @Params: None
+     @Returns: None
+*/
+pub fn print_follow_set() {
+     unsafe {
+          println!("Follow Set:");
+          for (symbol, follow_set) in &FOLLOW_SET_DICT {
+               print!("\t{}: ", symbol);
+               for follow in follow_set {
+                    print!("{} ", follow);
+               }
+               println!("");
+          }
+     }
+}
+
+/*
+     @Description: Prints the lookahead
+     @Params: None
+     @Returns: None
+*/
+pub fn print_lookahead() {
+     unsafe {
+          println!("Lookahead:");
+          for (symbol, lookahead) in &LOOKAHEAD {
+               print!("\t{}: ", symbol);
+               for lookahead in lookahead {
+                    print!("{} ", lookahead.0);
+               }
+               println!("");
+          }
+     }
+}
+
+/*
+     @Description: Prints the parsing table
+     @Params: None
+     @Returns: None
+*/
+pub fn print_table() {
+     unsafe {
+          println!("Parsing Table:");
+          for ((lhs, lookahead), rule) in &TABLE {
+               println!("\t{} {} {}", lhs, lookahead, rule);
+          }
+     }
+}
