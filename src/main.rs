@@ -5,7 +5,8 @@ use std::io::prelude::*;
 
 mod lexer;
 use lexer::Lexer;
-// mod parser;
+mod parser;
+use parser::Parser;
 
 /*
     @Description: Main function
@@ -29,6 +30,11 @@ fn main() {
     buffer1.push_str(&buffer2);
 
     let tokens = Lexer::get_next_token(&mut buffer1);
+    let parser = Parser::new();
+    match parser.parse(tokens) {
+        Ok(tree) => println!("Parse tree: {:?}", tree),
+        Err(error) => println!("Error: {}", error),
+    }
 
     println!("{:#?}", tokens);
 }
