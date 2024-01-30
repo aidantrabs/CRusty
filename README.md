@@ -22,7 +22,7 @@
 </div>
 
 ## Description :pushpin: 
-- Takes an `.ez` file as input and utilizes a double-buffer method to lexically analyze the language.
+- Takes a `.ez` file as input and utilizes a double-buffer method to lexically analyze the language.
 - Utilizes FIRST and FOLLOW sets to then parse the production rules.
 
 #### EZ Lang Grammar
